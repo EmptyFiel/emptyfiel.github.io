@@ -2,12 +2,47 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Pi Web Terminal</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.1.0/css/xterm.css" />
+    <style>
+        body { background: #000; margin: 0; overflow: hidden; }
+        #terminal { height: 100vh; width: 100vw; }
+    </style>
 </head>
 <body>
-    <h1>Hello</h1>
-    <script src="script.js"></script>
+    <div id="terminal"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.1.0/lib/xterm.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+    <script>
+        // 1. Point this to your Cloudflare Tunnel URL
+        const TUNNEL_URL = "https://terminal.emptyfiel.com"; // Change to your actual domain
+        
+        const socket = io(TUNNEL_URL);
+
+        const term = new Terminal({
+            cursorBlink: true,
+            fontSize: 14,
+            fontFamily: 'Courier New, monospace',
+            theme: { background: '#1a1a1a' }
+        });
+
+        term.open(document.getElementById('terminal'));
+        term.write('Connecting to Raspberry Pi...\r\n');
+
+        // Send keys to Pi
+        term.onData(data => {
+            socket.emit('terminal-input', data);
+        });
+
+        // Receive output from Pi
+        socket.on('terminal-output', data => {
+            term.write(data);
+        });
+
+        socket.on('connect', () => term.write('CONNECTED\r\n'));
+        socket.on('disconnect', () => term.write('\r\nDISCONNECTED\r\n'));
+    </script>
 </body>
 </html>
